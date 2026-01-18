@@ -21,6 +21,8 @@ export const DEFAULT_CONFIG: SandboxConfig = {
       "~/.pi",
     ],
     allowWrite: [
+      // cwd
+      ".",
       // weird files
       "/dev/stdout",
       "/dev/stderr",
@@ -30,7 +32,6 @@ export const DEFAULT_CONFIG: SandboxConfig = {
       "/dev/autofs_nowait",
       "/tmp/pi",
       "/private/tmp/pi",
-      ".",
     ],
     denyWrite: [
       // also secrets
