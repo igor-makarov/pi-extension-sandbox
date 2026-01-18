@@ -65,12 +65,14 @@ export function createSandboxedBashOps(): BashOperations {
             reject(new Error(`timeout:${timeout}`));
           } else {
             // Annotate stderr with sandbox violations if command failed
-            const stderrOutput = "";
-            const annotated = SandboxManager.annotateStderrWithSandboxFailures(command, stderrOutput);
-            if (annotated !== stderrOutput) {
-              const extra = annotated.replace(stderrOutput, "").trim();
-              if (extra) {
-                onData(Buffer.from(`\n${extra}\n\nUse the bash_unsandboxed_with_permission tool instead. It will ask the user for permission.\n`));
+            if (code !== 0) {
+              const stderrOutput = "";
+              const annotated = SandboxManager.annotateStderrWithSandboxFailures(command, stderrOutput);
+              if (annotated !== stderrOutput) {
+                const extra = annotated.replace(stderrOutput, "").trim();
+                if (extra) {
+                  onData(Buffer.from(`\n${extra}\n\nUse the bash_unsandboxed_with_permission tool instead. It will ask the user for permission.\n`));
+                }
               }
             }
 
