@@ -21,6 +21,7 @@ export function createSandboxCommand(isSandboxEnabled: () => boolean) {
         "Network:",
         `  Allowed: ${config.network?.allowedDomains?.join(", ") || "(none)"}`,
         `  Denied: ${config.network?.deniedDomains?.join(", ") || "(none)"}`,
+        `  Allow Local Binding: ${config.network?.allowLocalBinding ?? false}`,
         "",
         "Filesystem:",
         `  Deny Read: ${config.filesystem?.denyRead?.join(", ") || "(none)"}`,
