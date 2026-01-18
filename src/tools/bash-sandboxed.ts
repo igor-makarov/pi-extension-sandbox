@@ -1,7 +1,7 @@
 import { type AgentToolUpdateCallback, type ExtensionContext, createBashTool } from "@mariozechner/pi-coding-agent";
 
-import { createSandboxedBashOps, shouldBypassSandbox } from "@/src/sandbox-ops.js";
-import type { SandboxConfig } from "@/src/types.js";
+import { createSandboxedBashOps, shouldBypassSandbox } from "../sandbox-ops.js";
+import type { SandboxConfig } from "../types.js";
 
 export interface SandboxState {
   enabled: boolean;
