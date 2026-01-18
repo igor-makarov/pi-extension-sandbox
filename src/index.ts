@@ -13,7 +13,7 @@
  * ```json
  * {
  *   "enabled": true,
- *   "bypassedCommands": ["docker", "git push"],
+ *   "unsandboxedCommands": ["docker", "git push"],
  *   "network": {
  *     "allowedDomains": ["github.com", "*.github.com"],
  *     "deniedDomains": []

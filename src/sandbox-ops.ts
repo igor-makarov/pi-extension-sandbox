@@ -82,9 +82,9 @@ export function createSandboxedBashOps(): BashOperations {
   };
 }
 
-export function shouldBypassSandbox(command: string, bypassedCommands: string[]): boolean {
+export function isUnsandboxedCommand(command: string, unsandboxedCommands: string[]): boolean {
   const trimmedCommand = command.trim();
-  for (const pattern of bypassedCommands) {
+  for (const pattern of unsandboxedCommands) {
     if (trimmedCommand === pattern.trim()) {
       return true;
     }

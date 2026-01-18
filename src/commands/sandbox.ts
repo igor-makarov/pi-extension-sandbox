@@ -16,7 +16,7 @@ export function createSandboxCommand(isSandboxEnabled: () => boolean) {
         "Sandbox Configuration:",
         "",
         "Bypassed Commands:",
-        `  ${config.bypassedCommands?.join(", ") || "(none)"}`,
+        `  ${config.unsandboxedCommands?.join(", ") || "(none)"}`,
         "",
         "Network:",
         `  Allowed: ${config.network?.allowedDomains?.join(", ") || "(none)"}`,

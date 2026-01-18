@@ -6,7 +6,7 @@ import type { SandboxConfig } from "./types.js";
 
 export const DEFAULT_CONFIG: SandboxConfig = {
   enabled: true,
-  bypassedCommands: [],
+  unsandboxedCommands: [],
   network: {
     allowedDomains: [],
     deniedDomains: [],
@@ -76,7 +76,7 @@ export function deepMerge(base: SandboxConfig, overrides: Partial<SandboxConfig>
   const result: SandboxConfig = { ...base };
 
   if (overrides.enabled !== undefined) result.enabled = overrides.enabled;
-  if (overrides.bypassedCommands) result.bypassedCommands = overrides.bypassedCommands;
+  if (overrides.unsandboxedCommands) result.unsandboxedCommands = overrides.unsandboxedCommands;
   if (overrides.network) {
     result.network = { ...base.network, ...overrides.network };
   }

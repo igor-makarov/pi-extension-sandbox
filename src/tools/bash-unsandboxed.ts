@@ -1,7 +1,7 @@
 import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, createBashTool } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 
-import { shouldBypassSandbox } from "../sandbox-ops.js";
+import { isUnsandboxedCommand } from "../sandbox-ops.js";
 import type { SandboxState } from "./bash-sandboxed.js";
 
 type BashParams = { command: string; timeout?: number };
@@ -22,8 +22,8 @@ export function createUnsandboxedBashTool(cwd: string, state: SandboxState) {
     async execute(id: string, params: BashParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
       const command = params.command;
 
-      // Auto-approve if command is in bypassedCommands
-      if (shouldBypassSandbox(command, state.config.bypassedCommands ?? [])) {
+      // Auto-approve if command is in unsandboxedCommands
+      if (isUnsandboxedCommand(command, state.config.unsandboxedCommands ?? [])) {
         return localBash.execute(id, params, signal, onUpdate);
       }
 

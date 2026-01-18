@@ -1,6 +1,6 @@
 import { type AgentToolUpdateCallback, type ExtensionContext, createBashTool } from "@mariozechner/pi-coding-agent";
 
-import { createSandboxedBashOps, shouldBypassSandbox } from "../sandbox-ops.js";
+import { createSandboxedBashOps, isUnsandboxedCommand } from "../sandbox-ops.js";
 import type { SandboxConfig } from "../types.js";
 
 export interface SandboxState {
@@ -23,7 +23,7 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState) {
       }
 
       const command = params.command;
-      if (shouldBypassSandbox(command, state.config.bypassedCommands ?? [])) {
+      if (isUnsandboxedCommand(command, state.config.unsandboxedCommands ?? [])) {
         return localBash.execute(id, params, signal, onUpdate);
       }
 
