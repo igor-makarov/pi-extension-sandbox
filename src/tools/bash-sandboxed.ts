@@ -1,4 +1,5 @@
-import { type AgentToolUpdateCallback, type ExtensionContext, createBashTool } from "@mariozechner/pi-coding-agent";
+import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, createBashTool } from "@mariozechner/pi-coding-agent";
+import { Text } from "@mariozechner/pi-tui";
 
 import { createSandboxedBashOps, isUnsandboxedCommand } from "../sandbox-ops.js";
 import type { SandboxConfig } from "../types.js";
@@ -17,6 +18,13 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState) {
   return {
     ...localBash,
     label: "bash (sandboxed)",
+    renderCall: (args: Record<string, unknown> | undefined, theme: Theme) => {
+      const command = (args?.command as string) || "...";
+      if (state.enabled && state.initialized && isUnsandboxedCommand(command, state.config.unsandboxedCommands ?? [])) {
+        return new Text(theme.fg("toolTitle", theme.bold(`[unsandboxed] $ ${command}`)), 0, 0);
+      }
+      return new Text(theme.fg("toolTitle", theme.bold(`$ ${command}`)), 0, 0);
+    },
     async execute(id: string, params: BashParams, onUpdate: AgentToolUpdateCallback | undefined, _ctx: ExtensionContext, signal?: AbortSignal) {
       if (!state.enabled || !state.initialized) {
         return localBash.execute(id, params, signal, onUpdate);
