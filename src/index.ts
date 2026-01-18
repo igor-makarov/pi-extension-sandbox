@@ -63,7 +63,7 @@ export default function (pi: ExtensionAPI) {
 
   // Register tools
   pi.registerTool(createSandboxedBashTool(cwd, state));
-  pi.registerTool(createUnsandboxedBashTool(cwd));
+  pi.registerTool(createUnsandboxedBashTool(cwd, state));
 
   // Register commands
   pi.registerCommand(

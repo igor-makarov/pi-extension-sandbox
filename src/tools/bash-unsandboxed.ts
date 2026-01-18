@@ -1,9 +1,12 @@
 import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, createBashTool } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 
+import { shouldBypassSandbox } from "../sandbox-ops.js";
+import type { SandboxState } from "./bash-sandboxed.js";
+
 type BashParams = { command: string; timeout?: number };
 
-export function createUnsandboxedBashTool(cwd: string) {
+export function createUnsandboxedBashTool(cwd: string, state: SandboxState) {
   const localBash = createBashTool(cwd);
 
   return {
@@ -17,6 +20,13 @@ export function createUnsandboxedBashTool(cwd: string) {
       return new Text(theme.fg("toolTitle", theme.bold(`[unsandboxed] $ ${command}`)), 0, 0);
     },
     async execute(id: string, params: BashParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
+      const command = params.command;
+
+      // Auto-approve if command is in bypassedCommands
+      if (shouldBypassSandbox(command, state.config.bypassedCommands ?? [])) {
+        return localBash.execute(id, params, signal, onUpdate);
+      }
+
       if (!ctx.hasUI) {
         return {
           type: "tool_result" as const,
@@ -26,7 +36,6 @@ export function createUnsandboxedBashTool(cwd: string) {
         };
       }
 
-      const command = params.command;
       const approved = await ctx.ui.confirm(
         "Unsandboxed Command",
         `Allow running without sandbox?\n\n${command.slice(0, 500)}${command.length > 500 ? "..." : ""}`,
