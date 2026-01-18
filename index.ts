@@ -13,6 +13,7 @@
  * ```json
  * {
  *   "enabled": true,
+ *   "bypassedCommands": ["docker", "git push"],
  *   "network": {
  *     "allowedDomains": ["github.com", "*.github.com"],
  *     "deniedDomains": []
@@ -48,10 +49,12 @@ import { Text } from "@mariozechner/pi-tui";
 
 interface SandboxConfig extends SandboxRuntimeConfig {
 	enabled?: boolean;
+	bypassedCommands?: string[];
 }
 
 const DEFAULT_CONFIG: SandboxConfig = {
 	enabled: true,
+	bypassedCommands: [],
 	network: {
 		allowedDomains: [],
 		deniedDomains: [],
@@ -104,6 +107,7 @@ function deepMerge(base: SandboxConfig, overrides: Partial<SandboxConfig>): Sand
 	const result: SandboxConfig = { ...base };
 
 	if (overrides.enabled !== undefined) result.enabled = overrides.enabled;
+	if (overrides.bypassedCommands) result.bypassedCommands = overrides.bypassedCommands;
 	if (overrides.network) {
 		result.network = { ...base.network, ...overrides.network };
 	}
@@ -210,6 +214,16 @@ function createSandboxedBashOps(): BashOperations {
 	};
 }
 
+function shouldBypassSandbox(command: string, bypassedCommands: string[]): boolean {
+	const trimmedCommand = command.trim();
+	for (const pattern of bypassedCommands) {
+		if (trimmedCommand === pattern.trim()) {
+			return true;
+		}
+	}
+	return false;
+}
+
 export default function (pi: ExtensionAPI) {
 	pi.registerFlag("no-sandbox", {
 		description: "Disable OS-level sandboxing for bash commands",
@@ -222,12 +236,18 @@ export default function (pi: ExtensionAPI) {
 
 	let sandboxEnabled = false;
 	let sandboxInitialized = false;
+	let currentConfig: SandboxConfig = DEFAULT_CONFIG;
 
 	pi.registerTool({
 		...localBash,
 		label: "bash (sandboxed)",
 		async execute(id, params, onUpdate, _ctx, signal) {
 			if (!sandboxEnabled || !sandboxInitialized) {
+				return localBash.execute(id, params, signal, onUpdate);
+			}
+
+			const command = (params as { command: string }).command;
+			if (shouldBypassSandbox(command, currentConfig.bypassedCommands ?? [])) {
 				return localBash.execute(id, params, signal, onUpdate);
 			}
 
@@ -293,6 +313,7 @@ export default function (pi: ExtensionAPI) {
 		}
 
 		const config = loadConfig(ctx.cwd);
+		currentConfig = config;
 
 		if (!config.enabled) {
 			sandboxEnabled = false;
@@ -361,6 +382,9 @@ export default function (pi: ExtensionAPI) {
 			const config = loadConfig(ctx.cwd);
 			const lines = [
 				"Sandbox Configuration:",
+				"",
+				"Bypassed Commands:",
+				`  ${config.bypassedCommands?.join(", ") || "(none)"}`,
 				"",
 				"Network:",
 				`  Allowed: ${config.network?.allowedDomains?.join(", ") || "(none)"}`,
