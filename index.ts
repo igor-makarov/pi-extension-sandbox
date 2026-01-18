@@ -60,7 +60,7 @@ const DEFAULT_CONFIG: SandboxConfig = {
 		deniedDomains: [],
 	},
 	filesystem: {
-		denyRead: ["~/.ssh", "~/.aws", "~/.gnupg", "~/.claude", ".claude", "~/.pi", ".pi"],
+		denyRead: ["~/.ssh", "~/.aws", "~/.gnupg", "~/.claude", "~/.pi"],
 		allowWrite: [
 			"/dev/stdout",
 			"/dev/stderr",
