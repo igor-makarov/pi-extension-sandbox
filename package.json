@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "main": "src/index.ts",
   "scripts": {
     "clean": "echo 'nothing to clean'",
     "build": "echo 'nothing to build'",
@@ -10,11 +11,6 @@
     "format": "prettier --write --list-different .",
     "format:check": "prettier --check .",
     "test": "vitest --run"
-  },
-  "pi": {
-    "extensions": [
-      "./src/index.ts"
-    ]
   },
   "dependencies": {
     "@anthropic-ai/sandbox-runtime": "^0.0.28",
