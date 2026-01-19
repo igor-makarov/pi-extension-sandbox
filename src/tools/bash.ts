@@ -51,23 +51,13 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState): ToolD
 
       // Unsandboxed run
       if (!ctx.hasUI) {
-        return {
-          type: "tool_result" as const,
-          content: [{ type: "text" as const, text: "Cannot run unsandboxed command: no UI available for approval" }],
-          isError: true,
-          details: undefined,
-        };
+        throw new Error("Cannot run unsandboxed command: no UI available for approval");
       }
 
       const approved = await ctx.ui.confirm("Unsandboxed Command", `Allow running without sandbox?\n\n${params.command}`);
 
       if (!approved) {
-        return {
-          type: "tool_result" as const,
-          content: [{ type: "text" as const, text: "User denied permission to run command without sandbox" }],
-          isError: true,
-          details: undefined,
-        };
+        throw new Error("User denied permission to run command without sandbox");
       }
 
       return unsafeOriginalBash.execute(id, params, signal, onUpdate);
