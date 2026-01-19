@@ -43,8 +43,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { createSandboxCommand } from "./commands/sandbox.js";
 import { DEFAULT_CONFIG, loadConfig } from "./config.js";
 import { createSandboxedBashOps } from "./sandbox-ops.js";
-import { type SandboxState, createSandboxedBashTool } from "./tools/bash-sandboxed.js";
-import { createUnsandboxedBashTool } from "./tools/bash-unsandboxed.js";
+import { type SandboxState, createSandboxedBashTool } from "./tools/bash.js";
 
 export default function (pi: ExtensionAPI) {
   pi.registerFlag("no-sandbox", {
@@ -63,7 +62,6 @@ export default function (pi: ExtensionAPI) {
 
   // Register tools
   pi.registerTool(createSandboxedBashTool(cwd, state));
-  pi.registerTool(createUnsandboxedBashTool(cwd, state));
 
   // Register commands
   pi.registerCommand(
