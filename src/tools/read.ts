@@ -15,7 +15,7 @@ export function createSandboxedReadTool(cwd: string, state: SandboxState): ToolD
 
   return {
     ...unsafeOriginalRead,
-    description: `${unsafeOriginalRead.description} Reads in sandbox by default. Allows escalation via a UI prompt.`,
+    description: `${unsafeOriginalRead.description} Reads in sandbox by default. Escalate using unsandboxed: true if needed.`,
     parameters: {
       ...unsafeOriginalRead.parameters,
       properties: {

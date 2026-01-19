@@ -15,7 +15,7 @@ export function createSandboxedEditTool(cwd: string, state: SandboxState): ToolD
 
   return {
     ...unsafeOriginalEdit,
-    description: `${unsafeOriginalEdit.description} Edits in sandbox by default. Allows escalation via a UI prompt.`,
+    description: `${unsafeOriginalEdit.description} Edits in sandbox by default. Escalate using unsandboxed: true if needed.`,
     parameters: {
       ...unsafeOriginalEdit.parameters,
       properties: {

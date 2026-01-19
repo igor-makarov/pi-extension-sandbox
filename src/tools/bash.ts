@@ -16,7 +16,7 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState): ToolD
   });
   return {
     ...unsafeOriginalBash,
-    description: `${unsafeOriginalBash.description} Runs the command in an OS sandbox by default. Allows escalation via a UI prompt.`,
+    description: `${unsafeOriginalBash.description} Runs the command in an OS sandbox by default. Escalate using unsandboxed: true if needed.`,
     parameters: {
       ...unsafeOriginalBash.parameters,
       properties: {

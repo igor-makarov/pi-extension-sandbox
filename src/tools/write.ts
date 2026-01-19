@@ -14,7 +14,7 @@ export function createSandboxedWriteTool(cwd: string, state: SandboxState): Tool
 
   return {
     ...unsafeOriginalWrite,
-    description: `${unsafeOriginalWrite.description} Writes in sandbox by default. Allows escalation via a UI prompt.`,
+    description: `${unsafeOriginalWrite.description} Writes in sandbox by default. Escalate using unsandboxed: true if needed.`,
     parameters: {
       ...unsafeOriginalWrite.parameters,
       properties: {
