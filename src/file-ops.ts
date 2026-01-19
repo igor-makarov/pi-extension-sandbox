@@ -26,13 +26,20 @@ function pathMatchesPattern(path: string, pattern: string): boolean {
     pattern = homedir();
   }
 
+  // matchBase: patterns without / match against basename (e.g., *.pem matches /foo/bar.pem)
+  // Check before adding {,/**} suffix which introduces /
+  const useMatchBase = !pattern.includes("/");
+
   // For patterns without wildcards, also match children (e.g., /foo matches /foo/bar)
   if (!pattern.includes("*") && !pattern.includes("?")) {
     pattern = pattern + "{,/**}";
   }
 
-  // Glob match (matchBase: patterns without / match against basename)
-  return picomatch.isMatch(path, pattern, { matchBase: true });
+  if (useMatchBase) {
+    return picomatch.isMatch(path, pattern, { matchBase: true });
+  } else {
+    return picomatch.isMatch(path, pattern);
+  }
 }
 
 function resolvePath(path: string, cwd: string): string {
