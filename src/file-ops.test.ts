@@ -1,7 +1,8 @@
 import { homedir } from "node:os";
 import { describe, expect, it } from "vitest";
 
-import { pathMatchesPattern } from "./file-ops.js";
+import { isReadAllowed, pathMatchesPattern } from "./file-ops.js";
+import type { SandboxConfig } from "./types.js";
 
 describe("pathMatchesPattern", () => {
   const home = homedir();
@@ -95,6 +96,61 @@ describe("pathMatchesPattern", () => {
     it("does not match similar but different basenames", () => {
       expect(pathMatchesPattern("/projects/.envrc", ".env")).toBe(false);
       expect(pathMatchesPattern("/projects/.envrc", ".env.*")).toBe(false);
+    });
+  });
+});
+
+describe("isReadAllowed", () => {
+  const cwd = "/projects/myapp";
+  const home = homedir();
+
+  function createConfig(denyRead: string[]): SandboxConfig {
+    return { filesystem: { denyRead } } as SandboxConfig;
+  }
+
+  describe("empty or missing config", () => {
+    it("allows any path when denyRead is empty", () => {
+      expect(isReadAllowed("/any/path", cwd, createConfig([]))).toBe(true);
+      expect(isReadAllowed("~/.ssh/id_rsa", cwd, createConfig([]))).toBe(true);
+    });
+
+    it("allows any path when config is empty", () => {
+      expect(isReadAllowed("/any/path", cwd, {} as SandboxConfig)).toBe(true);
+    });
+  });
+
+  describe("path resolution", () => {
+    const deny = createConfig(["/projects/myapp/secrets", "~/.ssh"]);
+
+    it("resolves relative paths against cwd", () => {
+      expect(isReadAllowed("secrets/api.key", cwd, deny)).toBe(false);
+      expect(isReadAllowed("./secrets/api.key", cwd, deny)).toBe(false);
+      expect(isReadAllowed("src/index.ts", cwd, deny)).toBe(true);
+    });
+
+    it("expands ~ in input path", () => {
+      expect(isReadAllowed("~/.ssh/id_rsa", cwd, deny)).toBe(false);
+      expect(isReadAllowed("~/.bashrc", cwd, deny)).toBe(true);
+    });
+
+    it("handles absolute paths directly", () => {
+      expect(isReadAllowed("/projects/myapp/secrets/key", cwd, deny)).toBe(false);
+      expect(isReadAllowed(`${home}/.ssh/config`, cwd, deny)).toBe(false);
+    });
+  });
+
+  describe("multiple deny patterns", () => {
+    const deny = createConfig(["~/.ssh", "~/.aws", "*.pem"]);
+
+    it("denies if any pattern matches", () => {
+      expect(isReadAllowed(`${home}/.ssh/id_rsa`, cwd, deny)).toBe(false);
+      expect(isReadAllowed(`${home}/.aws/credentials`, cwd, deny)).toBe(false);
+      expect(isReadAllowed("/projects/cert.pem", cwd, deny)).toBe(false);
+    });
+
+    it("allows only if no patterns match", () => {
+      expect(isReadAllowed("/etc/hosts", cwd, deny)).toBe(true);
+      expect(isReadAllowed(`${home}/.bashrc`, cwd, deny)).toBe(true);
     });
   });
 });
