@@ -1,9 +1,10 @@
 /**
- * Sandbox Extension - OS-level sandboxing for bash commands
+ * Sandbox Extension - OS-level sandboxing for bash commands and file tools
  *
  * Uses @anthropic-ai/sandbox-runtime to enforce filesystem and network
  * restrictions on bash commands at the OS level (sandbox-exec on macOS,
- * bubblewrap on Linux).
+ * bubblewrap on Linux). File tools (read, write, edit) are sandboxed by
+ * validating paths against the same config before execution.
  *
  * Config files (merged, project takes precedence):
  * - ~/.pi/agent/sandbox.json (global)
@@ -45,8 +46,7 @@ import { DEFAULT_CONFIG, loadConfig } from "./config.js";
 import type { SandboxState } from "./data/SandboxState.js";
 import { createSandboxedBashOps } from "./sandbox-ops.js";
 import { createSandboxedBashTool } from "./tools/bash.js";
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+import { createSandboxedReadTool } from "./tools/read.js";
 
 export default function (pi: ExtensionAPI) {
   pi.registerFlag("no-sandbox", {
@@ -64,6 +64,7 @@ export default function (pi: ExtensionAPI) {
 
   // Register tools
   pi.registerTool(createSandboxedBashTool(cwd, state));
+  pi.registerTool(createSandboxedReadTool(cwd, state));
 
   // Register commands
   pi.registerCommand(
