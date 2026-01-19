@@ -1,5 +1,4 @@
-import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, type ToolDefinition, createEditTool } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import { type AgentToolUpdateCallback, type ExtensionContext, type ToolDefinition, createEditTool } from "@mariozechner/pi-coding-agent";
 
 import type { SandboxState } from "../data/SandboxState";
 import { isWriteAllowed } from "../file-ops";
@@ -24,21 +23,13 @@ export function createSandboxedEditTool(cwd: string, state: SandboxState): ToolD
         unsandboxed: { type: "boolean" as const, description: "Bypass sandbox restrictions (UI will ask for approval)" },
       },
     },
-    renderCall: (args: unknown, theme: Theme) => {
-      const params = args as EditParams;
-      const willRunUnsandboxed = params.unsandboxed || !state.enabled;
-      const path = params.path || "";
-      const pathDisplay = path ? theme.fg("accent", path) : theme.fg("toolOutput", "...");
-
-      if (willRunUnsandboxed) {
-        return new Text(theme.fg("toolTitle", theme.bold("[unsandboxed] edit")) + " " + pathDisplay, 0, 0);
-      }
-      return new Text(theme.fg("toolTitle", theme.bold("edit")) + " " + pathDisplay, 0, 0);
-    },
     async execute(id: string, params: EditParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
       // If sandbox not enabled → run directly
       if (!state.enabled) {
-        return unsafeOriginalEdit.execute(id, params, signal, onUpdate);
+        onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
+        const result = await unsafeOriginalEdit.execute(id, params, signal, onUpdate);
+        result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
+        return result;
       }
 
       // Default: check if write is allowed (edit is a form of writing)
@@ -60,7 +51,10 @@ export function createSandboxedEditTool(cwd: string, state: SandboxState): ToolD
         throw new Error("User denied permission to edit without sandbox");
       }
 
-      return unsafeOriginalEdit.execute(id, params, signal, onUpdate);
+      onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
+      const result = await unsafeOriginalEdit.execute(id, params, signal, onUpdate);
+      result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
+      return result;
     },
   };
 }

@@ -1,5 +1,4 @@
-import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, type ToolDefinition, createWriteTool } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import { type AgentToolUpdateCallback, type ExtensionContext, type ToolDefinition, createWriteTool } from "@mariozechner/pi-coding-agent";
 
 import type { SandboxState } from "../data/SandboxState";
 import { isWriteAllowed } from "../file-ops";
@@ -23,21 +22,13 @@ export function createSandboxedWriteTool(cwd: string, state: SandboxState): Tool
         unsandboxed: { type: "boolean" as const, description: "Bypass sandbox restrictions (UI will ask for approval)" },
       },
     },
-    renderCall: (args: unknown, theme: Theme) => {
-      const params = args as WriteParams;
-      const willRunUnsandboxed = params.unsandboxed || !state.enabled;
-      const path = params.path || "";
-      const pathDisplay = path ? theme.fg("accent", path) : theme.fg("toolOutput", "...");
-
-      if (willRunUnsandboxed) {
-        return new Text(theme.fg("toolTitle", theme.bold("[unsandboxed] write")) + " " + pathDisplay, 0, 0);
-      }
-      return new Text(theme.fg("toolTitle", theme.bold("write")) + " " + pathDisplay, 0, 0);
-    },
     async execute(id: string, params: WriteParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
       // If sandbox not enabled → run directly
       if (!state.enabled) {
-        return unsafeOriginalWrite.execute(id, params, signal, onUpdate);
+        onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
+        const result = await unsafeOriginalWrite.execute(id, params, signal, onUpdate);
+        result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
+        return result;
       }
 
       // Default: check if write is allowed
@@ -59,7 +50,10 @@ export function createSandboxedWriteTool(cwd: string, state: SandboxState): Tool
         throw new Error("User denied permission to write without sandbox");
       }
 
-      return unsafeOriginalWrite.execute(id, params, signal, onUpdate);
+      onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
+      const result = await unsafeOriginalWrite.execute(id, params, signal, onUpdate);
+      result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
+      return result;
     },
   };
 }

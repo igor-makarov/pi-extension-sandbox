@@ -1,5 +1,4 @@
-import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, type ToolDefinition, createReadTool } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import { type AgentToolUpdateCallback, type ExtensionContext, type ToolDefinition, createReadTool } from "@mariozechner/pi-coding-agent";
 
 import type { SandboxState } from "../data/SandboxState";
 import { isReadAllowed } from "../file-ops";
@@ -24,19 +23,13 @@ export function createSandboxedReadTool(cwd: string, state: SandboxState): ToolD
         unsandboxed: { type: "boolean" as const, description: "Bypass sandbox restrictions (UI will ask for approval)" },
       },
     },
-    renderCall: (args: unknown, theme: Theme) => {
-      const params = args as ReadParams;
-      const willRunUnsandboxed = params.unsandboxed || !state.enabled;
-
-      if (willRunUnsandboxed) {
-        return new Text(theme.fg("toolTitle", theme.bold(`[unsandboxed] read: ${params.path}`)), 0, 0);
-      }
-      return new Text(theme.fg("toolTitle", theme.bold(`read: ${params.path}`)), 0, 0);
-    },
     async execute(id: string, params: ReadParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
       // If sandbox not enabled → run directly
       if (!state.enabled) {
-        return unsafeOriginalRead.execute(id, params, signal, onUpdate);
+        onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
+        const result = await unsafeOriginalRead.execute(id, params, signal, onUpdate);
+        result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
+        return result;
       }
 
       // Default: check if read is allowed
@@ -58,7 +51,10 @@ export function createSandboxedReadTool(cwd: string, state: SandboxState): ToolD
         throw new Error("User denied permission to read without sandbox");
       }
 
-      return unsafeOriginalRead.execute(id, params, signal, onUpdate);
+      onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
+      const result = await unsafeOriginalRead.execute(id, params, signal, onUpdate);
+      result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
+      return result;
     },
   };
 }
