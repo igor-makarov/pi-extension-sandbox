@@ -1,4 +1,4 @@
-import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, createBashTool } from "@mariozechner/pi-coding-agent";
+import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, type ToolDefinition, createBashTool } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 
 import type { SandboxState } from "../data/SandboxState.js";
@@ -10,7 +10,7 @@ type BashParams = {
   unsandboxed?: boolean;
 };
 
-export function createSandboxedBashTool(cwd: string, state: SandboxState) {
+export function createSandboxedBashTool(cwd: string, state: SandboxState): ToolDefinition {
   const unsafeOriginalBash = createBashTool(cwd);
   const sandboxedBash = createBashTool(cwd, {
     operations: createSandboxedBashOps(),
@@ -25,22 +25,19 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState) {
         unsandboxed: { type: "boolean" as const, description: "Bypass sandbox restrictions (UI will ask for approval)" },
       },
     },
-    renderCall: (args: Record<string, unknown> | undefined, theme: Theme) => {
-      const command = (args?.command as string) || "...";
-      const unsandboxed = args?.unsandboxed as boolean;
+    renderCall: (args: unknown, theme: Theme) => {
+      const params = args as BashParams;
 
-      const willRunUnsandboxed = unsandboxed || !state.enabled || isUnsandboxedCommand(command, state.config.unsandboxedCommands ?? []);
+      const willRunUnsandboxed = params.unsandboxed || !state.enabled || isUnsandboxedCommand(params.command, state.config.unsandboxedCommands ?? []);
 
       if (willRunUnsandboxed) {
-        return new Text(theme.fg("toolTitle", theme.bold(`[unsandboxed] $ ${command}`)), 0, 0);
+        return new Text(theme.fg("toolTitle", theme.bold(`[unsandboxed] $ ${params.command}`)), 0, 0);
       }
-      return new Text(theme.fg("toolTitle", theme.bold(`$ ${command}`)), 0, 0);
+      return new Text(theme.fg("toolTitle", theme.bold(`$ ${params.command}`)), 0, 0);
     },
     async execute(id: string, params: BashParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
-      const { command, unsandboxed } = params;
-
       // Check if command is in auto-approved unsandboxed list
-      const isAutoApproved = isUnsandboxedCommand(command, state.config.unsandboxedCommands ?? []);
+      const isAutoApproved = isUnsandboxedCommand(params.command, state.config.unsandboxedCommands ?? []);
 
       // If sandbox not enabled or command is auto-approved → run directly
       if (!state.enabled || isAutoApproved) {
@@ -48,7 +45,7 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState) {
       }
 
       // Default: execute in sandbox
-      if (!unsandboxed) {
+      if (!params.unsandboxed) {
         return sandboxedBash.execute(id, params, signal, onUpdate);
       }
 
@@ -62,10 +59,7 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState) {
         };
       }
 
-      const approved = await ctx.ui.confirm(
-        "Unsandboxed Command",
-        `Allow running without sandbox?\n\n${command.slice(0, 500)}${command.length > 500 ? "..." : ""}`,
-      );
+      const approved = await ctx.ui.confirm("Unsandboxed Command", `Allow running without sandbox?\n\n${params.command}`);
 
       if (!approved) {
         return {
