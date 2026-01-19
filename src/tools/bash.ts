@@ -1,14 +1,8 @@
 import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, createBashTool } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 
+import type { SandboxState } from "../data/SandboxState.js";
 import { createSandboxedBashOps, isUnsandboxedCommand } from "../sandbox-ops.js";
-import type { SandboxConfig } from "../types.js";
-
-export interface SandboxState {
-  enabled: boolean;
-  initialized: boolean;
-  config: SandboxConfig;
-}
 
 type BashParams = {
   command: string;
@@ -35,8 +29,7 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState) {
       const command = (args?.command as string) || "...";
       const unsandboxed = args?.unsandboxed as boolean;
 
-      const willRunUnsandboxed =
-        unsandboxed || !state.enabled || !state.initialized || isUnsandboxedCommand(command, state.config.unsandboxedCommands ?? []);
+      const willRunUnsandboxed = unsandboxed || !state.enabled || isUnsandboxedCommand(command, state.config.unsandboxedCommands ?? []);
 
       if (willRunUnsandboxed) {
         return new Text(theme.fg("toolTitle", theme.bold(`[unsandboxed] $ ${command}`)), 0, 0);
@@ -49,8 +42,8 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState) {
       // Check if command is in auto-approved unsandboxed list
       const isAutoApproved = isUnsandboxedCommand(command, state.config.unsandboxedCommands ?? []);
 
-      // If sandbox not enabled/initialized, or command is auto-approved → run directly
-      if (!state.enabled || !state.initialized || isAutoApproved) {
+      // If sandbox not enabled or command is auto-approved → run directly
+      if (!state.enabled || isAutoApproved) {
         return unsafeOriginalBash.execute(id, params, signal, onUpdate);
       }
 

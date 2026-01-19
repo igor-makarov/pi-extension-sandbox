@@ -42,8 +42,11 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 import { createSandboxCommand } from "./commands/sandbox.js";
 import { DEFAULT_CONFIG, loadConfig } from "./config.js";
+import type { SandboxState } from "./data/SandboxState.js";
 import { createSandboxedBashOps } from "./sandbox-ops.js";
-import { type SandboxState, createSandboxedBashTool } from "./tools/bash.js";
+import { createSandboxedBashTool } from "./tools/bash.js";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function (pi: ExtensionAPI) {
   pi.registerFlag("no-sandbox", {
@@ -56,7 +59,6 @@ export default function (pi: ExtensionAPI) {
 
   const state: SandboxState = {
     enabled: false,
-    initialized: false,
     config: DEFAULT_CONFIG,
   };
 
@@ -71,7 +73,7 @@ export default function (pi: ExtensionAPI) {
 
   // Event handlers
   pi.on("user_bash", () => {
-    if (!state.enabled || !state.initialized) return;
+    if (!state.enabled) return;
     return { operations: createSandboxedBashOps() };
   });
 
@@ -118,7 +120,6 @@ export default function (pi: ExtensionAPI) {
       );
 
       state.enabled = true;
-      state.initialized = true;
 
       const networkCount = config.network?.allowedDomains?.length ?? 0;
       const writeCount = config.filesystem?.allowWrite?.length ?? 0;
@@ -131,7 +132,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_shutdown", async () => {
-    if (state.initialized) {
+    if (state.enabled) {
       try {
         await SandboxManager.reset();
       } catch {
