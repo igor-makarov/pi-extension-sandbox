@@ -26,10 +26,7 @@ export function createSandboxedEditTool(cwd: string, state: SandboxState): ToolD
     async execute(id: string, params: EditParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
       // If sandbox not enabled → run directly
       if (!state.enabled) {
-        onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
-        const result = await unsafeOriginalEdit.execute(id, params, signal, onUpdate);
-        result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
-        return result;
+        return unsafeOriginalEdit.execute(id, params, signal, onUpdate);
       }
 
       // Default: check if write is allowed (edit is a form of writing)
@@ -51,10 +48,7 @@ export function createSandboxedEditTool(cwd: string, state: SandboxState): ToolD
         throw new Error("User denied permission to edit without sandbox");
       }
 
-      onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
-      const result = await unsafeOriginalEdit.execute(id, params, signal, onUpdate);
-      result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
-      return result;
+      return unsafeOriginalEdit.execute(id, params, signal, onUpdate);
     },
   };
 }

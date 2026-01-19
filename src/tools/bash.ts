@@ -30,10 +30,7 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState): ToolD
 
       // If sandbox not enabled or command is auto-approved → run directly
       if (!state.enabled || isAutoApproved) {
-        onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
-        const result = await unsafeOriginalBash.execute(id, params, signal, onUpdate);
-        result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
-        return result;
+        return unsafeOriginalBash.execute(id, params, signal, onUpdate);
       }
 
       // Default: execute in sandbox
@@ -52,10 +49,7 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState): ToolD
         throw new Error("User denied permission to run command without sandbox");
       }
 
-      onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
-      const result = await unsafeOriginalBash.execute(id, params, signal, onUpdate);
-      result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
-      return result;
+      return unsafeOriginalBash.execute(id, params, signal, onUpdate);
     },
   };
 }

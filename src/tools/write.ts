@@ -25,10 +25,7 @@ export function createSandboxedWriteTool(cwd: string, state: SandboxState): Tool
     async execute(id: string, params: WriteParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
       // If sandbox not enabled → run directly
       if (!state.enabled) {
-        onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
-        const result = await unsafeOriginalWrite.execute(id, params, signal, onUpdate);
-        result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
-        return result;
+        return unsafeOriginalWrite.execute(id, params, signal, onUpdate);
       }
 
       // Default: check if write is allowed
@@ -50,10 +47,7 @@ export function createSandboxedWriteTool(cwd: string, state: SandboxState): Tool
         throw new Error("User denied permission to write without sandbox");
       }
 
-      onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
-      const result = await unsafeOriginalWrite.execute(id, params, signal, onUpdate);
-      result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
-      return result;
+      return unsafeOriginalWrite.execute(id, params, signal, onUpdate);
     },
   };
 }

@@ -26,10 +26,7 @@ export function createSandboxedReadTool(cwd: string, state: SandboxState): ToolD
     async execute(id: string, params: ReadParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
       // If sandbox not enabled → run directly
       if (!state.enabled) {
-        onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
-        const result = await unsafeOriginalRead.execute(id, params, signal, onUpdate);
-        result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
-        return result;
+        return unsafeOriginalRead.execute(id, params, signal, onUpdate);
       }
 
       // Default: check if read is allowed
@@ -51,10 +48,7 @@ export function createSandboxedReadTool(cwd: string, state: SandboxState): ToolD
         throw new Error("User denied permission to read without sandbox");
       }
 
-      onUpdate?.({ content: [{ type: "text", text: "[unsandboxed]" }], details: {} });
-      const result = await unsafeOriginalRead.execute(id, params, signal, onUpdate);
-      result.content = [...result.content, { type: "text", text: "[unsandboxed]" }];
-      return result;
+      return unsafeOriginalRead.execute(id, params, signal, onUpdate);
     },
   };
 }
