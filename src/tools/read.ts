@@ -15,12 +15,12 @@ export function createSandboxedReadTool(cwd: string, state: SandboxState): ToolD
 
   return {
     ...unsafeOriginalRead,
-    description: `${unsafeOriginalRead.description} Runs in sandbox by default.`,
+    description: `${unsafeOriginalRead.description} Reads in sandbox by default. Allows escalation via a UI prompt.`,
     parameters: {
       ...unsafeOriginalRead.parameters,
       properties: {
         ...unsafeOriginalRead.parameters.properties,
-        unsandboxed: { type: "boolean" as const, description: "Bypass sandbox restrictions (UI will ask for approval)" },
+        unsandboxed: { type: "boolean" as const, description: "Show UI to user to bypass sandbox restrictions" },
       },
     },
     async execute(id: string, params: ReadParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {

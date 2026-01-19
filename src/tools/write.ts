@@ -14,12 +14,12 @@ export function createSandboxedWriteTool(cwd: string, state: SandboxState): Tool
 
   return {
     ...unsafeOriginalWrite,
-    description: `${unsafeOriginalWrite.description} Runs in sandbox by default.`,
+    description: `${unsafeOriginalWrite.description} Writes in sandbox by default. Allows escalation via a UI prompt.`,
     parameters: {
       ...unsafeOriginalWrite.parameters,
       properties: {
         ...unsafeOriginalWrite.parameters.properties,
-        unsandboxed: { type: "boolean" as const, description: "Bypass sandbox restrictions (UI will ask for approval)" },
+        unsandboxed: { type: "boolean" as const, description: "Show UI to user to bypass sandbox restrictions" },
       },
     },
     async execute(id: string, params: WriteParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {

@@ -15,12 +15,12 @@ export function createSandboxedEditTool(cwd: string, state: SandboxState): ToolD
 
   return {
     ...unsafeOriginalEdit,
-    description: `${unsafeOriginalEdit.description} Runs in sandbox by default.`,
+    description: `${unsafeOriginalEdit.description} Edits in sandbox by default. Allows escalation via a UI prompt.`,
     parameters: {
       ...unsafeOriginalEdit.parameters,
       properties: {
         ...unsafeOriginalEdit.parameters.properties,
-        unsandboxed: { type: "boolean" as const, description: "Bypass sandbox restrictions (UI will ask for approval)" },
+        unsandboxed: { type: "boolean" as const, description: "Show UI to user to bypass sandbox restrictions" },
       },
     },
     async execute(id: string, params: EditParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
