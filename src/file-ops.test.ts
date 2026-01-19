@@ -1,138 +1,100 @@
 import { homedir } from "node:os";
 import { describe, expect, it } from "vitest";
 
-import { isReadAllowed } from "./file-ops.js";
-import type { SandboxConfig } from "./types.js";
+import { pathMatchesPattern } from "./file-ops.js";
 
-const baseConfig: SandboxConfig = {
-  enabled: true,
-  unsandboxedCommands: [],
-  network: {
-    allowedDomains: [],
-    deniedDomains: [],
-  },
-  filesystem: {
-    denyRead: [],
-    allowWrite: [],
-    denyWrite: [],
-    allowGitConfig: false,
-  },
-};
-
-describe("isReadAllowed", () => {
-  const cwd = "/projects/myapp";
+describe("pathMatchesPattern", () => {
   const home = homedir();
 
-  describe("when denyRead is empty", () => {
-    it("allows any path", () => {
-      const config = { ...baseConfig };
-      expect(isReadAllowed("/any/path", cwd, config)).toBe(true);
-      expect(isReadAllowed("~/.ssh/id_rsa", cwd, config)).toBe(true);
+  describe("tilde expansion", () => {
+    it("expands ~ in pattern to home directory", () => {
+      expect(pathMatchesPattern(`${home}/.ssh`, "~/.ssh")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.ssh/id_rsa`, "~/.ssh")).toBe(true);
+    });
+
+    it("expands standalone ~ in pattern", () => {
+      expect(pathMatchesPattern(home, "~")).toBe(true);
+      expect(pathMatchesPattern(`${home}/Documents`, "~")).toBe(true);
     });
   });
 
-  describe("when denyRead is undefined", () => {
-    it("allows any path", () => {
-      const config = { ...baseConfig, filesystem: undefined } as unknown as SandboxConfig;
-      expect(isReadAllowed("/any/path", cwd, config)).toBe(true);
+  describe("directory matching", () => {
+    it("matches exact directory path", () => {
+      expect(pathMatchesPattern(`${home}/.ssh`, "~/.ssh")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.aws`, "~/.aws")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.gnupg`, "~/.gnupg")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.claude`, "~/.claude")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.pi`, "~/.pi")).toBe(true);
+    });
+
+    it("matches files inside directory", () => {
+      expect(pathMatchesPattern(`${home}/.ssh/id_rsa`, "~/.ssh")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.ssh/config`, "~/.ssh")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.ssh/known_hosts`, "~/.ssh")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.aws/credentials`, "~/.aws")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.gnupg/secring.gpg`, "~/.gnupg")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.claude/config.json`, "~/.claude")).toBe(true);
+      expect(pathMatchesPattern(`${home}/.pi/settings.json`, "~/.pi")).toBe(true);
+    });
+
+    it("matches deeply nested files", () => {
+      expect(pathMatchesPattern(`${home}/.ssh/keys/work/id_rsa`, "~/.ssh")).toBe(true);
+    });
+
+    it("does not match unrelated paths", () => {
+      expect(pathMatchesPattern("/etc/hosts", "~/.ssh")).toBe(false);
+      expect(pathMatchesPattern(`${home}/.bashrc`, "~/.ssh")).toBe(false);
+      expect(pathMatchesPattern(`${home}/Documents/file.txt`, "~/.ssh")).toBe(false);
+    });
+
+    it("does not match paths that merely start with pattern", () => {
+      expect(pathMatchesPattern(`${home}/.ssh-backup`, "~/.ssh")).toBe(false);
     });
   });
 
-  describe("with default deny patterns", () => {
-    const config: SandboxConfig = {
-      ...baseConfig,
-      filesystem: {
-        ...baseConfig.filesystem,
-        denyRead: ["~/.ssh", "~/.aws", "~/.gnupg", "~/.claude", "~/.pi"],
-      },
-    };
-
-    it("denies reading ~/.ssh", () => {
-      expect(isReadAllowed("~/.ssh", cwd, config)).toBe(false);
-      expect(isReadAllowed(`${home}/.ssh`, cwd, config)).toBe(false);
+  describe("absolute path matching", () => {
+    it("matches absolute path patterns", () => {
+      expect(pathMatchesPattern("/projects/myapp/secrets/api.key", "/projects/myapp/secrets")).toBe(true);
+      expect(pathMatchesPattern("/projects/myapp/secrets", "/projects/myapp/secrets")).toBe(true);
     });
 
-    it("denies reading files inside ~/.ssh", () => {
-      expect(isReadAllowed("~/.ssh/id_rsa", cwd, config)).toBe(false);
-      expect(isReadAllowed("~/.ssh/config", cwd, config)).toBe(false);
-      expect(isReadAllowed(`${home}/.ssh/known_hosts`, cwd, config)).toBe(false);
-    });
-
-    it("denies reading deeply nested files in ~/.ssh", () => {
-      expect(isReadAllowed("~/.ssh/keys/work/id_rsa", cwd, config)).toBe(false);
-    });
-
-    it("denies reading other sensitive directories", () => {
-      expect(isReadAllowed("~/.aws/credentials", cwd, config)).toBe(false);
-      expect(isReadAllowed("~/.gnupg/secring.gpg", cwd, config)).toBe(false);
-      expect(isReadAllowed("~/.claude/config.json", cwd, config)).toBe(false);
-      expect(isReadAllowed("~/.pi/settings.json", cwd, config)).toBe(false);
-    });
-
-    it("allows reading non-sensitive paths", () => {
-      expect(isReadAllowed("/etc/hosts", cwd, config)).toBe(true);
-      expect(isReadAllowed("~/.bashrc", cwd, config)).toBe(true);
-      expect(isReadAllowed(`${home}/Documents/file.txt`, cwd, config)).toBe(true);
-    });
-
-    it("allows reading project files", () => {
-      expect(isReadAllowed("src/index.ts", cwd, config)).toBe(true);
-      expect(isReadAllowed("./package.json", cwd, config)).toBe(true);
-    });
-  });
-
-  describe("relative path handling", () => {
-    const config: SandboxConfig = {
-      ...baseConfig,
-      filesystem: {
-        ...baseConfig.filesystem,
-        denyRead: ["/projects/myapp/secrets"],
-      },
-    };
-
-    it("resolves relative paths against cwd", () => {
-      expect(isReadAllowed("secrets/api.key", cwd, config)).toBe(false);
-      expect(isReadAllowed("./secrets/api.key", cwd, config)).toBe(false);
-    });
-
-    it("allows relative paths outside denied directories", () => {
-      expect(isReadAllowed("src/index.ts", cwd, config)).toBe(true);
+    it("does not match paths outside pattern", () => {
+      expect(pathMatchesPattern("/projects/myapp/src/index.ts", "/projects/myapp/secrets")).toBe(false);
     });
   });
 
   describe("glob patterns", () => {
-    const config: SandboxConfig = {
-      ...baseConfig,
-      filesystem: {
-        ...baseConfig.filesystem,
-        denyRead: [".env", ".env.*", "*.pem", "*.key", ".claude", ".pi"],
-      },
-    };
-
-    it("denies files matching glob patterns", () => {
-      expect(isReadAllowed("server.pem", cwd, config)).toBe(false);
-      expect(isReadAllowed("private.key", cwd, config)).toBe(false);
-      expect(isReadAllowed(".env.local", cwd, config)).toBe(false);
-      expect(isReadAllowed(".env.production", cwd, config)).toBe(false);
+    it("matches wildcard extension patterns", () => {
+      expect(pathMatchesPattern("/projects/server.pem", "*.pem")).toBe(true);
+      expect(pathMatchesPattern("/projects/private.key", "*.key")).toBe(true);
     });
 
-    it("denies exact basename matches", () => {
-      expect(isReadAllowed(".env", cwd, config)).toBe(false);
-      expect(isReadAllowed(".claude", cwd, config)).toBe(false);
-      expect(isReadAllowed(".pi", cwd, config)).toBe(false);
+    it("matches dotfile wildcard patterns", () => {
+      expect(pathMatchesPattern("/projects/.env.local", ".env.*")).toBe(true);
+      expect(pathMatchesPattern("/projects/.env.production", ".env.*")).toBe(true);
     });
 
-    it("denies nested files matching glob patterns", () => {
-      expect(isReadAllowed("certs/server.pem", cwd, config)).toBe(false);
-      expect(isReadAllowed("/absolute/path/to/private.key", cwd, config)).toBe(false);
-      expect(isReadAllowed("config/.env", cwd, config)).toBe(false);
-      expect(isReadAllowed("/some/path/.claude", cwd, config)).toBe(false);
+    it("matches exact basename patterns", () => {
+      expect(pathMatchesPattern("/projects/.env", ".env")).toBe(true);
+      expect(pathMatchesPattern("/projects/.claude", ".claude")).toBe(true);
+      expect(pathMatchesPattern("/projects/.pi", ".pi")).toBe(true);
     });
 
-    it("allows files not matching glob patterns", () => {
-      expect(isReadAllowed("server.cert", cwd, config)).toBe(true);
-      expect(isReadAllowed("config.json", cwd, config)).toBe(true);
-      expect(isReadAllowed(".envrc", cwd, config)).toBe(true);
+    it("matches nested files with basename patterns", () => {
+      expect(pathMatchesPattern("/projects/certs/server.pem", "*.pem")).toBe(true);
+      expect(pathMatchesPattern("/absolute/path/to/private.key", "*.key")).toBe(true);
+      expect(pathMatchesPattern("/projects/config/.env", ".env")).toBe(true);
+      expect(pathMatchesPattern("/some/path/.claude", ".claude")).toBe(true);
+    });
+
+    it("does not match files with different extensions", () => {
+      expect(pathMatchesPattern("/projects/server.cert", "*.pem")).toBe(false);
+      expect(pathMatchesPattern("/projects/config.json", "*.key")).toBe(false);
+    });
+
+    it("does not match similar but different basenames", () => {
+      expect(pathMatchesPattern("/projects/.envrc", ".env")).toBe(false);
+      expect(pathMatchesPattern("/projects/.envrc", ".env.*")).toBe(false);
     });
   });
 });

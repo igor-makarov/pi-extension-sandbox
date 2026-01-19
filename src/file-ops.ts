@@ -18,7 +18,7 @@ export function isReadAllowed(path: string, cwd: string, config: SandboxConfig):
   return !denyRead.some((pattern) => pathMatchesPattern(absolutePath, pattern));
 }
 
-function pathMatchesPattern(path: string, pattern: string): boolean {
+export function pathMatchesPattern(path: string, pattern: string): boolean {
   // Expand ~ in pattern
   if (pattern.startsWith("~/")) {
     pattern = homedir() + pattern.slice(1);
