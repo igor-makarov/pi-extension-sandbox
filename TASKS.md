@@ -1,5 +1,7 @@
 # Tasks
 
 - [x] SandboxState should be in separate file
-- [ ] Add sandbox interception for file tools (`write`, `edit`, `read`) - currently only `bash` is sandboxed, file tools bypass OS-level restrictions
+- [x] Add sandbox interception for `read` tool
+- [ ] Add sandbox interception for `write` tool
+- [ ] Add sandbox interception for `edit` tool
 - [ ] `bypassedCommands` prefix match option
