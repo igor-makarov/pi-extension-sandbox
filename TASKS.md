@@ -4,4 +4,5 @@
 - [x] Add sandbox interception for `read` tool
 - [x] Add sandbox interception for `write` tool
 - [x] Add sandbox interception for `edit` tool
-- [ ] `bypassedCommands` prefix match option
+- [ ] `unsandboxedCommands` support compound commands (parse operators)
+- [ ] `unsandboxedCommands` prefix match option
