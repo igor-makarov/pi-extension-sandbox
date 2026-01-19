@@ -69,12 +69,7 @@ export function createSandboxedBashOps(): BashOperations {
             if (code !== 0) {
               const stderrOutput = "";
               const annotated = SandboxManager.annotateStderrWithSandboxFailures(command, stderrOutput);
-              if (annotated !== stderrOutput) {
-                const extra = annotated.replace(stderrOutput, "").trim();
-                if (extra) {
-                  onData(Buffer.from(`\n${extra}\n\nUse the bash_unsandboxed_with_permission tool instead. It will ask the user for permission.\n`));
-                }
-              }
+              onData(Buffer.from(annotated));
             }
 
             resolve({ exitCode: code });
