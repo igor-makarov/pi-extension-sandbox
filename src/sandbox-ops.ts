@@ -2,6 +2,7 @@ import { SandboxManager } from "@anthropic-ai/sandbox-runtime";
 import type { BashOperations } from "@mariozechner/pi-coding-agent";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
+import { parse } from "shell-quote";
 
 export function createSandboxedBashOps(): BashOperations {
   return {
@@ -84,12 +85,65 @@ export function createSandboxedBashOps(): BashOperations {
   };
 }
 
+/**
+ * Checks if a command matches any of the unsandboxed command patterns.
+ * Uses shell-quote to properly parse commands, handling quotes and escapes.
+ *
+ * - Exact match: "npm test" matches only "npm test"
+ * - Prefix match: "npm run *" matches "npm run build", "npm run test", etc.
+ * - Compound commands (with &&, ||, |, ;, redirects) are never matched for safety.
+ */
 export function isUnsandboxedCommand(command: string, unsandboxedCommands: string[]): boolean {
-  const trimmedCommand = command.trim();
+  const commandTokens = parseCommand(command);
+  if ("isCompound" in commandTokens) {
+    return false;
+  }
+
   for (const pattern of unsandboxedCommands) {
-    if (trimmedCommand === pattern.trim()) {
-      return true;
+    const { tokens: patternTokens, isPrefixMatch } = parsePattern(pattern);
+
+    if (isPrefixMatch) {
+      // Prefix match: command must have at least as many tokens as pattern (minus the *)
+      if (patternTokens.length > commandTokens.length) continue;
+      const matches = patternTokens.every((token, i) => token === commandTokens[i]);
+      if (matches) return true;
+    } else {
+      // Exact match: command must have exactly the same tokens
+      if (patternTokens.length !== commandTokens.length) continue;
+      const matches = patternTokens.every((token, i) => token === commandTokens[i]);
+      if (matches) return true;
     }
   }
+
   return false;
+}
+
+/**
+ * Parses a command string into tokens. Globs are converted to their pattern strings.
+ * Returns { isCompound: true } if the command contains shell operators (&&, ||, |, ;, redirects, etc.)
+ */
+function parseCommand(command: string): string[] | { isCompound: true } {
+  const parsed = parse(command.trim());
+  const tokens: string[] = [];
+  for (const token of parsed) {
+    if (typeof token === "string") {
+      tokens.push(token);
+    } else if ("op" in token && token.op === "glob") {
+      tokens.push(token.pattern);
+    } else {
+      return { isCompound: true };
+    }
+  }
+  return tokens;
+}
+
+/**
+ * Parses a pattern string into tokens and determines if it's a prefix match (ends with *).
+ */
+function parsePattern(pattern: string): { tokens: string[]; isPrefixMatch: boolean } {
+  const parsed = parse(pattern.trim());
+  const tokens = parsed.filter((t): t is string => typeof t === "string");
+  const lastToken = parsed[parsed.length - 1];
+  const isPrefixMatch = typeof lastToken === "object" && "op" in lastToken && lastToken.op === "glob" && lastToken.pattern === "*";
+  return { tokens, isPrefixMatch };
 }
