@@ -16,12 +16,12 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState): ToolD
   });
   return {
     ...unsafeOriginalBash,
-    description: `${unsafeOriginalBash.description} Runs the command in an OS sandbox by default.`,
+    description: `${unsafeOriginalBash.description} Runs the command in an OS sandbox by default. Allows escalation via a UI prompt.`,
     parameters: {
       ...unsafeOriginalBash.parameters,
       properties: {
         ...unsafeOriginalBash.parameters.properties,
-        unsandboxed: { type: "boolean" as const, description: "Bypass sandbox restrictions (UI will ask for approval)" },
+        unsandboxed: { type: "boolean" as const, description: "Show UI to user to bypass sandbox restrictions" },
       },
     },
     async execute(id: string, params: BashParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
