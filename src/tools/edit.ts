@@ -1,8 +1,8 @@
 import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, type ToolDefinition, createEditTool } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 
-import type { SandboxState } from "../data/SandboxState.js";
-import { isWriteAllowed } from "../file-ops.js";
+import type { SandboxState } from "../data/SandboxState";
+import { isWriteAllowed } from "../file-ops";
 
 type EditParams = {
   path: string;

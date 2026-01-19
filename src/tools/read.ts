@@ -1,8 +1,8 @@
 import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, type ToolDefinition, createReadTool } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 
-import type { SandboxState } from "../data/SandboxState.js";
-import { isReadAllowed } from "../file-ops.js";
+import type { SandboxState } from "../data/SandboxState";
+import { isReadAllowed } from "../file-ops";
 
 type ReadParams = {
   path: string;

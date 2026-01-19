@@ -41,14 +41,14 @@
 import { SandboxManager } from "@anthropic-ai/sandbox-runtime";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
-import { createSandboxCommand } from "./commands/sandbox.js";
-import { DEFAULT_CONFIG, loadConfig } from "./config.js";
-import type { SandboxState } from "./data/SandboxState.js";
-import { createSandboxedBashOps } from "./sandbox-ops.js";
-import { createSandboxedBashTool } from "./tools/bash.js";
-import { createSandboxedEditTool } from "./tools/edit.js";
-import { createSandboxedReadTool } from "./tools/read.js";
-import { createSandboxedWriteTool } from "./tools/write.js";
+import { createSandboxCommand } from "./commands/sandbox";
+import { DEFAULT_CONFIG, loadConfig } from "./config";
+import type { SandboxState } from "./data/SandboxState";
+import { createSandboxedBashOps } from "./sandbox-ops";
+import { createSandboxedBashTool } from "./tools/bash";
+import { createSandboxedEditTool } from "./tools/edit";
+import { createSandboxedReadTool } from "./tools/read";
+import { createSandboxedWriteTool } from "./tools/write";
 
 export default function (pi: ExtensionAPI) {
   pi.registerFlag("no-sandbox", {

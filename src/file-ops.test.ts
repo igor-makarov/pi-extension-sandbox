@@ -1,8 +1,8 @@
 import { homedir } from "node:os";
 import { describe, expect, it } from "vitest";
 
-import { isReadAllowed, isWriteAllowed, pathMatchesPattern } from "./file-ops.js";
-import type { SandboxConfig } from "./types.js";
+import { isReadAllowed, isWriteAllowed, pathMatchesPattern } from "./file-ops";
+import type { SandboxConfig } from "./types";
 
 describe("pathMatchesPattern", () => {
   const home = homedir();

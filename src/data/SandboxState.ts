@@ -1,4 +1,4 @@
-import type { SandboxConfig } from "../types.js";
+import type { SandboxConfig } from "../types";
 
 export interface SandboxState {
   enabled: boolean;

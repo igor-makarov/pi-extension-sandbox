@@ -1,8 +1,8 @@
 import { type AgentToolUpdateCallback, type ExtensionContext, type Theme, type ToolDefinition, createBashTool } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 
-import type { SandboxState } from "../data/SandboxState.js";
-import { createSandboxedBashOps, isUnsandboxedCommand } from "../sandbox-ops.js";
+import type { SandboxState } from "../data/SandboxState";
+import { createSandboxedBashOps, isUnsandboxedCommand } from "../sandbox-ops";
 
 type BashParams = {
   command: string;

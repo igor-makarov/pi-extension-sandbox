@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { isAbsolute, resolve } from "node:path";
 import picomatch from "picomatch";
 
-import type { SandboxConfig } from "./types.js";
+import type { SandboxConfig } from "./types";
 
 /**
  * Checks if reading from a path is allowed by sandbox config.

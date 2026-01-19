@@ -1,6 +1,6 @@
 import type { ExtensionCommandContext } from "@mariozechner/pi-coding-agent";
 
-import { loadConfig } from "../config.js";
+import { loadConfig } from "../config";
 
 export function createSandboxCommand(isSandboxEnabled: () => boolean) {
   return {
