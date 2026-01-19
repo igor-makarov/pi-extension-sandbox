@@ -56,7 +56,7 @@ export function pathMatchesPattern(path: string, pattern: string, cwd: string): 
     pattern = cwd;
   } else if (pattern.startsWith("./")) {
     pattern = cwd + pattern.slice(1);
-  } else if (!pattern.startsWith("/") && !pattern.startsWith("*") && !pattern.startsWith("?") && pattern.includes("/")) {
+  } else if (!pattern.startsWith("/") && pattern.includes("/")) {
     // Relative path with directory component (e.g., "src/foo")
     pattern = cwd + "/" + pattern;
   }

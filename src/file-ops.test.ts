@@ -112,6 +112,13 @@ describe("pathMatchesPattern", () => {
       expect(pathMatchesPattern("/projects/myapp/src", "./src", cwd)).toBe(true);
       expect(pathMatchesPattern("/projects/myapp/other/file.ts", "./src", cwd)).toBe(false);
     });
+
+    it("resolves relative glob patterns against cwd", () => {
+      expect(pathMatchesPattern("/projects/myapp/foo/test.bar", "foo/*.bar", cwd)).toBe(true);
+      expect(pathMatchesPattern("/projects/myapp/foo/x.bar", "foo/*.bar", cwd)).toBe(true);
+      expect(pathMatchesPattern("/projects/myapp/foo/test.baz", "foo/*.bar", cwd)).toBe(false);
+      expect(pathMatchesPattern("/other/foo/test.bar", "foo/*.bar", cwd)).toBe(false);
+    });
   });
 });
 
