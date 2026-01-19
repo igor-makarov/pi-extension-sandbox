@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
-import { basename } from "node:path";
 import { isAbsolute, resolve } from "node:path";
+import picomatch from "picomatch";
 
 import type { SandboxConfig } from "./types.js";
 
@@ -26,67 +26,13 @@ function pathMatchesPattern(path: string, pattern: string): boolean {
     pattern = homedir();
   }
 
-  // If pattern has no path separator, match against basename only
-  if (!pattern.includes("/")) {
-    return globMatch(basename(path), pattern);
-  }
-
-  // Directory prefix match (pattern without wildcards)
+  // For patterns without wildcards, also match children (e.g., /foo matches /foo/bar)
   if (!pattern.includes("*") && !pattern.includes("?")) {
-    return path === pattern || path.startsWith(pattern + "/");
+    pattern = pattern + "{,/**}";
   }
 
-  // Full path glob match
-  return globMatch(path, pattern);
-}
-
-/**
- * Matches a string against a glob pattern.
- * Supports: * (any chars except /), ** (any chars including /), ? (single char except /)
- */
-function globMatch(str: string, pattern: string): boolean {
-  let regexStr = "^";
-  let i = 0;
-
-  while (i < pattern.length) {
-    const char = pattern[i];
-
-    if (char === "*" && pattern[i + 1] === "*") {
-      // ** matches anything including /
-      if (pattern[i + 2] === "/") {
-        // **/ at this position - match any path prefix (including empty)
-        regexStr += "(?:.*/)?";
-        i += 3;
-      } else {
-        // ** at end or before non-slash - match anything
-        regexStr += ".*";
-        i += 2;
-      }
-    } else if (char === "*") {
-      // * matches anything except /
-      regexStr += "[^/]*";
-      i++;
-    } else if (char === "?") {
-      // ? matches single char except /
-      regexStr += "[^/]";
-      i++;
-    } else if (".+^${}()|[]\\".includes(char)) {
-      // Escape regex special chars
-      regexStr += "\\" + char;
-      i++;
-    } else {
-      regexStr += char;
-      i++;
-    }
-  }
-
-  regexStr += "$";
-
-  try {
-    return new RegExp(regexStr).test(str);
-  } catch {
-    return str === pattern;
-  }
+  // Glob match (matchBase: patterns without / match against basename)
+  return picomatch.isMatch(path, pattern, { matchBase: true });
 }
 
 function resolvePath(path: string, cwd: string): string {
