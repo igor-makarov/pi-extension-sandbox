@@ -47,6 +47,7 @@ import type { SandboxState } from "./data/SandboxState.js";
 import { createSandboxedBashOps } from "./sandbox-ops.js";
 import { createSandboxedBashTool } from "./tools/bash.js";
 import { createSandboxedReadTool } from "./tools/read.js";
+import { createSandboxedWriteTool } from "./tools/write.js";
 
 export default function (pi: ExtensionAPI) {
   pi.registerFlag("no-sandbox", {
@@ -65,6 +66,7 @@ export default function (pi: ExtensionAPI) {
   // Register tools
   pi.registerTool(createSandboxedBashTool(cwd, state));
   pi.registerTool(createSandboxedReadTool(cwd, state));
+  pi.registerTool(createSandboxedWriteTool(cwd, state));
 
   // Register commands
   pi.registerCommand(
