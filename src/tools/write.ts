@@ -26,11 +26,13 @@ export function createSandboxedWriteTool(cwd: string, state: SandboxState): Tool
     renderCall: (args: unknown, theme: Theme) => {
       const params = args as WriteParams;
       const willRunUnsandboxed = params.unsandboxed || !state.enabled;
+      const path = params.path || "";
+      const pathDisplay = path ? theme.fg("accent", path) : theme.fg("toolOutput", "...");
 
       if (willRunUnsandboxed) {
-        return new Text(theme.fg("toolTitle", theme.bold(`[unsandboxed] write: ${params.path}`)), 0, 0);
+        return new Text(theme.fg("toolTitle", theme.bold("[unsandboxed] write")) + " " + pathDisplay, 0, 0);
       }
-      return new Text(theme.fg("toolTitle", theme.bold(`write: ${params.path}`)), 0, 0);
+      return new Text(theme.fg("toolTitle", theme.bold("write")) + " " + pathDisplay, 0, 0);
     },
     async execute(id: string, params: WriteParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
       // If sandbox not enabled → run directly
