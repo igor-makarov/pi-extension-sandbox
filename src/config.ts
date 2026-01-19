@@ -1,3 +1,4 @@
+import deepmerge from "deepmerge";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -69,33 +70,5 @@ export function loadConfig(cwd: string): SandboxConfig {
     }
   }
 
-  return deepMerge(deepMerge(DEFAULT_CONFIG, globalConfig), projectConfig);
-}
-
-export function deepMerge(base: SandboxConfig, overrides: Partial<SandboxConfig>): SandboxConfig {
-  const result: SandboxConfig = { ...base };
-
-  if (overrides.enabled !== undefined) result.enabled = overrides.enabled;
-  if (overrides.unsandboxedCommands) result.unsandboxedCommands = overrides.unsandboxedCommands;
-  if (overrides.network) {
-    result.network = { ...base.network, ...overrides.network };
-  }
-  if (overrides.filesystem) {
-    result.filesystem = { ...base.filesystem, ...overrides.filesystem };
-  }
-
-  const extOverrides = overrides as {
-    ignoreViolations?: Record<string, string[]>;
-    enableWeakerNestedSandbox?: boolean;
-  };
-  const extResult = result as { ignoreViolations?: Record<string, string[]>; enableWeakerNestedSandbox?: boolean };
-
-  if (extOverrides.ignoreViolations) {
-    extResult.ignoreViolations = extOverrides.ignoreViolations;
-  }
-  if (extOverrides.enableWeakerNestedSandbox !== undefined) {
-    extResult.enableWeakerNestedSandbox = extOverrides.enableWeakerNestedSandbox;
-  }
-
-  return result;
+  return deepmerge.all<SandboxConfig>([DEFAULT_CONFIG, globalConfig, projectConfig]);
 }
