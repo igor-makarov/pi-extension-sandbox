@@ -87,6 +87,45 @@ describe("isUnsandboxedCommand", () => {
     });
   });
 
+  describe("safe trailing redirects", () => {
+    it("allows trailing 2>&1 with wildcard pattern", () => {
+      expect(isUnsandboxedCommand("mcporter auth atlassian 2>&1", ["mcporter *"])).toBe(true);
+    });
+
+    it("allows trailing 2>&1 with exact pattern", () => {
+      expect(isUnsandboxedCommand("npm test 2>&1", ["npm test"])).toBe(true);
+    });
+
+    it("allows trailing 2>/dev/null", () => {
+      expect(isUnsandboxedCommand("find . -name '*.ts' 2>/dev/null", ["find *"])).toBe(true);
+    });
+
+    it("allows trailing >/dev/null 2>&1", () => {
+      expect(isUnsandboxedCommand("command -v node >/dev/null 2>&1", ["command *"])).toBe(true);
+    });
+
+    it("allows trailing &>/dev/null (bash shorthand)", () => {
+      expect(isUnsandboxedCommand("command -v node &>/dev/null", ["command *"])).toBe(true);
+    });
+
+    it("rejects output redirects to file", () => {
+      expect(isUnsandboxedCommand("mcporter bla > /etc/passwd", ["mcporter *"])).toBe(false);
+      expect(isUnsandboxedCommand("mcporter bla >> /etc/passwd", ["mcporter *"])).toBe(false);
+    });
+
+    it("rejects input redirects from file", () => {
+      expect(isUnsandboxedCommand("mcporter bla < /etc/passwd", ["mcporter *"])).toBe(false);
+    });
+
+    it("rejects redirects to /dev/null from non-trailing position", () => {
+      expect(isUnsandboxedCommand("mcporter 2>/dev/null auth", ["mcporter *"])).toBe(false);
+    });
+
+    it("rejects 2>&1 in non-trailing position", () => {
+      expect(isUnsandboxedCommand("mcporter 2>&1 auth atlassian", ["mcporter *"])).toBe(false);
+    });
+  });
+
   describe("compound commands are rejected", () => {
     it("rejects commands with &&", () => {
       expect(isUnsandboxedCommand("npm test && npm build", ["npm test"])).toBe(false);
@@ -112,7 +151,6 @@ describe("isUnsandboxedCommand", () => {
     it("rejects commands with redirects", () => {
       expect(isUnsandboxedCommand("echo hello > file.txt", ["echo hello"])).toBe(false);
       expect(isUnsandboxedCommand("cat < input.txt", ["cat"])).toBe(false);
-      expect(isUnsandboxedCommand("npm test 2>&1", ["npm test"])).toBe(false);
     });
   });
 

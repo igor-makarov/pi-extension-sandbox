@@ -87,6 +87,7 @@ export function createSandboxedBashOps(): BashOperations {
  * - Exact match: "npm test" matches only "npm test"
  * - Prefix match: "npm run *" matches "npm run build", "npm run test", etc.
  * - Compound commands (with &&, ||, |, ;, redirects) are never matched for safety.
+ * - Safe trailing redirects (2>&1, 2>/dev/null, etc.) are stripped before matching.
  */
 export function isUnsandboxedCommand(command: string, unsandboxedCommands: string[]): boolean {
   const commandTokens = parseCommand(command);
@@ -116,9 +117,11 @@ export function isUnsandboxedCommand(command: string, unsandboxedCommands: strin
 /**
  * Parses a command string into tokens. Globs are converted to their pattern strings.
  * Returns { isCompound: true } if the command contains shell operators (&&, ||, |, ;, redirects, etc.)
+ * Safe trailing redirects (2>&1, 2>/dev/null, etc.) are stripped before parsing.
  */
 function parseCommand(command: string): string[] | { isCompound: true } {
-  const parsed = parse(command.trim());
+  const stripped = stripSafeTrailingRedirects(command);
+  const parsed = parse(stripped.trim());
   const tokens: string[] = [];
   for (const token of parsed) {
     if (typeof token === "string") {
@@ -130,6 +133,33 @@ function parseCommand(command: string): string[] | { isCompound: true } {
     }
   }
   return tokens;
+}
+
+/**
+ * Safe trailing redirects that are allowed at the end of commands.
+ * These are harmless redirects that don't write to arbitrary files.
+ * Order matters: more specific patterns must come first to avoid partial matches.
+ */
+const SAFE_TRAILING_REDIRECTS = [
+  ">/dev/null 2>&1", // discard all output (POSIX)
+  "&>/dev/null", // discard all output (bash shorthand)
+  "2>/dev/null", // discard stderr
+  "2>&1", // combine stderr into stdout
+];
+
+/**
+ * Strips safe trailing redirects from a command string.
+ * Returns the command without the redirect suffix.
+ */
+function stripSafeTrailingRedirects(command: string): string {
+  let stripped = command.trimEnd();
+  for (const redirect of SAFE_TRAILING_REDIRECTS) {
+    if (stripped.endsWith(redirect)) {
+      stripped = stripped.slice(0, -redirect.length).trimEnd();
+      break; // Only strip one redirect
+    }
+  }
+  return stripped;
 }
 
 /**
