@@ -145,4 +145,55 @@ export default function (pi: ExtensionAPI) {
       }
     }
   });
+
+  pi.on("before_agent_start", async () => {
+    if (!state.enabled) return;
+
+    const { config } = state;
+    const lines: string[] = ["# Sandbox Configuration", ""];
+
+    // Filesystem restrictions
+    if (config.filesystem) {
+      lines.push("## Filesystem Restrictions");
+      if (config.filesystem.denyRead?.length) {
+        lines.push(`- **Denied read paths:** ${config.filesystem.denyRead.join(", ")}`);
+      }
+      if (config.filesystem.allowWrite?.length) {
+        lines.push(`- **Allowed write paths:** ${config.filesystem.allowWrite.join(", ")}`);
+      }
+      if (config.filesystem.denyWrite?.length) {
+        lines.push(`- **Denied write paths:** ${config.filesystem.denyWrite.join(", ")}`);
+      }
+      lines.push("");
+    }
+
+    // Network restrictions
+    if (config.network) {
+      lines.push("## Network Restrictions");
+      if (config.network.allowedDomains?.length) {
+        lines.push(`- **Allowed domains:** ${config.network.allowedDomains.join(", ")}`);
+      }
+      if (config.network.deniedDomains?.length) {
+        lines.push(`- **Denied domains:** ${config.network.deniedDomains.join(", ")}`);
+      }
+      lines.push("");
+    }
+
+    // Unsandboxed commands
+    if (config.unsandboxedCommands?.length) {
+      lines.push("## Unsandboxed Commands");
+      lines.push(`The following commands auto-bypass sandbox restrictions (exact/prefix match only): ${config.unsandboxedCommands.join(", ")}`);
+      lines.push("");
+    }
+
+    lines.push("Commands and file operations outside allowed paths will fail with permission errors.");
+
+    return {
+      message: {
+        customType: "sandbox-config",
+        content: lines.join("\n"),
+        display: false,
+      },
+    };
+  });
 }
