@@ -24,7 +24,13 @@ export function createSandboxedBashTool(cwd: string, state: SandboxState): ToolD
         unsandboxed: { type: "boolean" as const, description: "Show UI to user to bypass sandbox restrictions" },
       },
     },
-    async execute(id: string, params: BashParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
+    async execute(
+      id: string,
+      params: BashParams,
+      signal: AbortSignal | undefined,
+      onUpdate: AgentToolUpdateCallback | undefined,
+      ctx: ExtensionContext,
+    ) {
       // Check if command is in auto-approved unsandboxed list
       const isAutoApproved = isUnsandboxedCommand(params.command, state.config.unsandboxedCommands ?? []);
 

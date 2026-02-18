@@ -23,7 +23,13 @@ export function createSandboxedEditTool(cwd: string, state: SandboxState): ToolD
         unsandboxed: { type: "boolean" as const, description: "Show UI to user to bypass sandbox restrictions" },
       },
     },
-    async execute(id: string, params: EditParams, onUpdate: AgentToolUpdateCallback | undefined, ctx: ExtensionContext, signal?: AbortSignal) {
+    async execute(
+      id: string,
+      params: EditParams,
+      signal: AbortSignal | undefined,
+      onUpdate: AgentToolUpdateCallback | undefined,
+      ctx: ExtensionContext,
+    ) {
       // If sandbox not enabled → run directly
       if (!state.enabled) {
         return unsafeOriginalEdit.execute(id, params, signal, onUpdate);
