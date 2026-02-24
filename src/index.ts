@@ -184,15 +184,16 @@ export default function (pi: ExtensionAPI) {
       lines.push("## Unsandboxed Commands");
       lines.push(`The following commands auto-bypass sandbox restrictions (exact/prefix match only): ${config.unsandboxedCommands.join(", ")}`);
       lines.push("");
-      const example = config.unsandboxedCommands[0];
-      const isPrefix = example.endsWith(" *");
-      if (isPrefix) {
-        const prefix = example.slice(0, -2);
-        lines.push(`Example: \`${prefix} list\` — works (prefix match)`);
-        lines.push(`Example: \`${prefix} list | head -10\` — won't work (pipes/shell operators break the match)`);
-      } else {
-        lines.push(`Example: \`${example}\` — works (exact match)`);
-        lines.push(`Example: \`${example} && echo done\` — won't work (shell operators break the match)`);
+      for (const example of config.unsandboxedCommands) {
+        const isPrefix = example.endsWith(" *");
+        if (isPrefix) {
+          const prefix = example.slice(0, -2);
+          lines.push(`Example: \`${prefix} list\` — works (prefix match)`);
+          lines.push(`Example: \`${prefix} list | head -10\` — won't work (pipes/shell operators break the match)`);
+        } else {
+          lines.push(`Example: \`${example}\` — works (exact match)`);
+          lines.push(`Example: \`${example} && echo done\` — won't work (shell operators break the match)`);
+        }
       }
       lines.push("");
     }
