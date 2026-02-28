@@ -182,7 +182,7 @@ export default function (pi: ExtensionAPI) {
     // Unsandboxed commands
     if (config.unsandboxedCommands?.length) {
       lines.push("## Unsandboxed Commands");
-      lines.push(`The following commands auto-bypass sandbox restrictions (exact/prefix match only): ${config.unsandboxedCommands.join(", ")}`);
+      lines.push(`The following commands are pre-allowed auto-bypass sandbox restrictions (exact/prefix match only): ${config.unsandboxedCommands.join(", ")}`);
       lines.push("");
       for (const example of config.unsandboxedCommands) {
         const isPrefix = example.endsWith(" *");
@@ -199,6 +199,7 @@ export default function (pi: ExtensionAPI) {
     }
 
     lines.push("Commands and file operations outside allowed paths will fail with permission errors.");
+    lines.push("You can use `unsandboxed` param for a bypass. This will auto-request approval from the user.");
 
     return {
       message: {
