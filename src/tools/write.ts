@@ -29,17 +29,14 @@ export function createSandboxedWriteTool(cwd: string, state: SandboxState): Tool
       onUpdate: AgentToolUpdateCallback | undefined,
       ctx: ExtensionContext,
     ) {
-      // If sandbox not enabled → run directly
-      if (!state.enabled) {
+      // If sandbox not enabled or path is auto-approved → run directly
+      if (!state.enabled || isWriteAllowed(params.path, cwd, state.config)) {
         return unsafeOriginalWrite.execute(id, params, signal, onUpdate);
       }
 
-      // Default: check if write is allowed
+      // If we reached here, the path is NOT allowed in the sandbox.
       if (!params.unsandboxed) {
-        if (!isWriteAllowed(params.path, cwd, state.config)) {
-          throw new Error(`Sandbox: write denied for "${params.path}"`);
-        }
-        return unsafeOriginalWrite.execute(id, params, signal, onUpdate);
+        throw new Error(`Sandbox: write denied for "${params.path}"`);
       }
 
       // Unsandboxed run

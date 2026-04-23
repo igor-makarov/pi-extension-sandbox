@@ -30,17 +30,14 @@ export function createSandboxedReadTool(cwd: string, state: SandboxState): ToolD
       onUpdate: AgentToolUpdateCallback | undefined,
       ctx: ExtensionContext,
     ) {
-      // If sandbox not enabled → run directly
-      if (!state.enabled) {
+      // If sandbox not enabled or path is auto-approved → run directly
+      if (!state.enabled || isReadAllowed(params.path, cwd, state.config)) {
         return unsafeOriginalRead.execute(id, params, signal, onUpdate);
       }
 
-      // Default: check if read is allowed
+      // If we reached here, the path is NOT allowed in the sandbox.
       if (!params.unsandboxed) {
-        if (!isReadAllowed(params.path, cwd, state.config)) {
-          throw new Error(`Sandbox: read denied for "${params.path}"`);
-        }
-        return unsafeOriginalRead.execute(id, params, signal, onUpdate);
+        throw new Error(`Sandbox: read denied for "${params.path}"`);
       }
 
       // Unsandboxed run

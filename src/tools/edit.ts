@@ -222,23 +222,14 @@ export function createSandboxedEditTool(cwd: string, state: SandboxState) {
       onUpdate: AgentToolUpdateCallback | undefined,
       ctx: ExtensionContext,
     ) {
-      // If sandbox not enabled → run directly
-      if (!state.enabled) {
+      // If sandbox not enabled or path is auto-approved → run directly
+      if (!state.enabled || isWriteAllowed(params.path, cwd, state.config)) {
         return unsafeOriginalEdit.execute(id, params, signal, onUpdate, ctx);
       }
 
-      // Default: check if write is allowed (edit is a form of writing)
+      // If we reached here, the path is NOT allowed in the sandbox.
       if (!params.unsandboxed) {
-        if (!isWriteAllowed(params.path, cwd, state.config)) {
-          throw new Error(`Sandbox: edit denied for "${params.path}"`);
-        }
-
-        const dryRun = await dryRunEditPreview(params, cwd, state);
-        if (dryRun.kind === "error") {
-          throw new Error(dryRun.message);
-        }
-
-        return unsafeOriginalEdit.execute(id, params, signal, onUpdate, ctx);
+        throw new Error(`Sandbox: edit denied for "${params.path}"`);
       }
 
       const dryRun = await dryRunEditPreview(params, cwd, state);
