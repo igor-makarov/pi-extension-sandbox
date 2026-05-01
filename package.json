@@ -1,7 +1,9 @@
 {
-  "name": "pi-sandbox",
-  "private": true,
+  "name": "@igormaka/pi-sandbox",
   "version": "0.0.1",
+  "keywords": [
+    "pi-package"
+  ],
   "type": "module",
   "main": "src/index.ts",
   "pi": {

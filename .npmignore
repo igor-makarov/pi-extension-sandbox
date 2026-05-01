@@ -1,0 +1,7 @@
+.pi
+.vscode
+src/**/*.test.ts
+.prettierignore
+.prettierrc
+tsconfig.json
+vitest.config.ts
