@@ -210,22 +210,24 @@ export default function (pi: ExtensionAPI) {
     // Unsandboxed commands
     if (config.unsandboxedCommands?.length) {
       lines.push("## Commands With Auto-escalation");
-      lines.push(
-        `The following commands are pre-allowed to bypass sandbox restrictions (exact/prefix match only): ${config.unsandboxedCommands.join(", ")}`,
-      );
+      lines.push("The following command patterns are pre-allowed to bypass sandbox restrictions:");
       lines.push("");
-      for (const example of config.unsandboxedCommands) {
-        const isPrefix = example.endsWith(" *");
+      for (const pattern of config.unsandboxedCommands) {
+        const isPrefix = pattern.endsWith(" *");
         if (isPrefix) {
-          const prefix = example.slice(0, -2);
-          lines.push(`Example: \`${prefix} "some argument"\` — works (prefix match)`);
-          lines.push(`Example: \`${prefix} | head -10\` — won't work (pipes/shell operators break the match)`);
+          const prefix = pattern.slice(0, -2);
+          lines.push(`### \`${pattern}\` (prefix match)`);
+          lines.push(`- Works: \`${prefix} \"some argument\"\``);
+          lines.push(`- Won't work: \`${prefix} | head -10\` (pipes/shell operators break the match)`);
+          lines.push(`- Won't work: \`sleep 5 && ${prefix}\` (prepended commands break the match)`);
         } else {
-          lines.push(`Example: \`${example}\` — works (exact match)`);
-          lines.push(`Example: \`${example} && echo done\` — won't work (shell operators break the match)`);
+          lines.push(`### \`${pattern}\` (exact match)`);
+          lines.push(`- Works: \`${pattern}\``);
+          lines.push(`- Won't work: \`${pattern} && echo done\` (shell operators break the match)`);
+          lines.push(`- Won't work: \`sleep 5 && ${pattern}\` (prepended commands break the match)`);
         }
+        lines.push("");
       }
-      lines.push("");
     }
 
     lines.push("Commands and file operations outside allowed paths will fail with permission errors.");
