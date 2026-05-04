@@ -243,8 +243,14 @@ export default function (pi: ExtensionAPI) {
           lines.push(`- Won't work: \`sleep 5 && ${pattern}\` (prepended commands break the match)`);
         }
         lines.push("");
+        lines.push("  IMPORTANT: If you do not adhere to the match rules, the command will fail.");
+        lines.push("  If it fails, change the command syntax and try again.");
+        lines.push("  Do not try escalate; the reason for having a pre-approved command is to facilitate unattended operation.");
+        lines.push("");
       }
     }
+
+    lines.push("## Notes");
 
     lines.push("File operations outside allowed paths, and networking outside allowed domains will fail with permission errors.");
     lines.push("You can use the `bypassSandbox: true` param to request a bypass.");
