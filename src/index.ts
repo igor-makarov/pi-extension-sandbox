@@ -252,9 +252,10 @@ export default function (pi: ExtensionAPI) {
 
     lines.push("## Notes");
 
-    lines.push("File operations outside allowed paths, and networking outside allowed domains will fail with permission errors.");
-    lines.push("You can use the `bypassSandbox: true` param to request a bypass.");
-    lines.push("The tool will show an approval dialog before running outside the sandbox.");
+    lines.push("- File operations outside allowed paths, and networking outside allowed domains will fail with permission errors.");
+    lines.push("  You can use the `bypassSandbox: true` param to request a bypass.");
+    lines.push("  The tool will show an approval dialog before running outside the sandbox.");
+    lines.push("- Read and write paths are independent of each other.");
 
     return {
       message: {
