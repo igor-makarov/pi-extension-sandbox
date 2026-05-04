@@ -181,24 +181,24 @@ export default function (pi: ExtensionAPI) {
     if (config.filesystem) {
       lines.push("## Filesystem Restrictions");
       lines.push("");
-      lines.push("### Allowed read paths");
+      lines.push("### Allowed read");
       lines.push("- `/` (entire filesystem readable)");
       lines.push("");
 
       if (config.filesystem.denyRead?.length) {
-        lines.push("### Denied read paths");
+        lines.push("### Denied read (overrides allowed read)");
         lines.push(...config.filesystem.denyRead.map((path) => `- ${formatDisplayPath(path, ctx.cwd)}`));
         lines.push("");
       }
 
       if (config.filesystem.allowWrite?.length) {
-        lines.push("### Allowed write paths");
+        lines.push("### Allowed write");
         lines.push(...config.filesystem.allowWrite.map((path) => `- ${formatDisplayPath(path, ctx.cwd)}`));
         lines.push("");
       }
 
       if (config.filesystem.denyWrite?.length) {
-        lines.push("### Denied write paths");
+        lines.push("### Denied write (overrides allowed write)");
         lines.push(...config.filesystem.denyWrite.map((path) => `- ${formatDisplayPath(path, ctx.cwd)}`));
         lines.push("");
       }
