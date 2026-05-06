@@ -3,7 +3,7 @@ import type { BashOperations } from "@mariozechner/pi-coding-agent";
 import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
-import { parse } from "shell-quote";
+import { type ParseEntry, parse } from "shell-quote";
 
 import type { SandboxState } from "./data/SandboxState";
 
@@ -153,10 +153,22 @@ export function findUnsandboxedCompoundMatches(command: string, unsandboxedComma
   const stripped = stripSafeTrailingRedirects(command);
   const parsed = parse(stripped.trim());
 
-  // Split tokens into segments on any operator token (non-glob).
+  // Split tokens into segments on any operator token (non-glob), and also on
+  // known safe redirect sequences like `2>&1` / `>/dev/null` (shell-quote splits
+  // `2>&1` into `"2", {op:">&"}, "1"`, so we treat the whole 3-token sequence as
+  // a single boundary). Redirect sequences split segments but do NOT themselves
+  // mark the command as compound -- only real shell operators (|, &&, ||, ;,
+  // and non-safe redirects) do.
   const segments: string[][] = [[]];
   let hasOperator = false;
-  for (const token of parsed) {
+  for (let i = 0; i < parsed.length; ) {
+    const redirLen = matchRedirectSequence(parsed, i);
+    if (redirLen > 0) {
+      segments.push([]);
+      i += redirLen;
+      continue;
+    }
+    const token = parsed[i]!;
     if (typeof token === "string") {
       segments[segments.length - 1].push(token);
     } else if ("op" in token && token.op === "glob") {
@@ -165,6 +177,7 @@ export function findUnsandboxedCompoundMatches(command: string, unsandboxedComma
       hasOperator = true;
       segments.push([]);
     }
+    i++;
   }
 
   if (!hasOperator) return [];
@@ -242,6 +255,46 @@ function stripSafeTrailingRedirects(command: string): string {
     }
   }
   return stripped;
+}
+
+/**
+ * Token-level definitions of the `SAFE_TRAILING_REDIRECTS` strings, matched
+ * against the output of shell-quote's `parse()`. Needed for the advisory
+ * compound-match path, where a safe redirect may appear before a pipe/&&/||
+ * and string-level trailing matching doesn't help.
+ */
+const REDIRECT_TOKEN_SEQUENCES: ReadonlyArray<ReadonlyArray<string | { op: string }>> = [
+  [{ op: "&" }, { op: ">" }, "/dev/null"], // &>/dev/null
+  ["2", { op: ">" }, "/dev/null"], // 2>/dev/null
+  ["2", { op: ">&" }, "1"], // 2>&1
+  [{ op: ">" }, "/dev/null"], // >/dev/null (also covers the first half of >/dev/null 2>&1)
+];
+
+/**
+ * If the token list starting at `start` matches any entry in
+ * `REDIRECT_TOKEN_SEQUENCES`, returns its length. Otherwise returns 0.
+ * Used by `findUnsandboxedCompoundMatches` to split segments at safe redirects.
+ */
+function matchRedirectSequence(tokens: ParseEntry[], start: number): number {
+  for (const seq of REDIRECT_TOKEN_SEQUENCES) {
+    if (start + seq.length > tokens.length) continue;
+    let ok = true;
+    for (let j = 0; j < seq.length; j++) {
+      const tok = tokens[start + j]!;
+      const want = seq[j]!;
+      if (typeof want === "string") {
+        if (tok !== want) {
+          ok = false;
+          break;
+        }
+      } else if (typeof tok !== "object" || !("op" in tok) || tok.op !== want.op) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return seq.length;
+  }
+  return 0;
 }
 
 /**

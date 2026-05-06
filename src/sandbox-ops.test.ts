@@ -201,6 +201,16 @@ describe("findUnsandboxedCompoundMatches", () => {
     ]);
   });
 
+  it("detects match when 2>&1 is followed by a pipe", () => {
+    expect(findUnsandboxedCompoundMatches("mcporter auth atlassian 2>&1 | tail -60", ["mcporter *"])).toEqual([
+      { subcommand: "mcporter auth atlassian", pattern: "mcporter *" },
+    ]);
+  });
+
+  it("detects match when 2>&1 is followed by a pipe (exact pattern)", () => {
+    expect(findUnsandboxedCompoundMatches("npm test 2>&1 | tail -60", ["npm test"])).toEqual([{ subcommand: "npm test", pattern: "npm test" }]);
+  });
+
   it("detects matches across ; separated commands", () => {
     expect(findUnsandboxedCompoundMatches("echo hi; git status", ["git *"])).toEqual([{ subcommand: "git status", pattern: "git *" }]);
   });
