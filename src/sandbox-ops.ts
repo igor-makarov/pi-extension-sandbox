@@ -138,6 +138,65 @@ export function isUnsandboxedCommand(command: string, unsandboxedCommands: strin
 }
 
 /**
+ * If the command is compound (contains shell operators like &&, ||, |, ;, redirects, etc.)
+ * AND one or more of its subcommand components would have matched an unsandboxed pattern
+ * if run alone, returns the list of matching { subcommand, pattern } pairs.
+ *
+ * Used to warn the agent when it writes a compound command under the (false) assumption
+ * that the pre-allowed pattern still applies. Returns [] for non-compound commands and
+ * for compound commands with no matching subcomponents.
+ *
+ * Safe trailing redirects (2>&1, 2>/dev/null, etc.) are stripped before analysis so they
+ * do not produce spurious warnings.
+ */
+export function findUnsandboxedCompoundMatches(command: string, unsandboxedCommands: string[]): { subcommand: string; pattern: string }[] {
+  const stripped = stripSafeTrailingRedirects(command);
+  const parsed = parse(stripped.trim());
+
+  // Split tokens into segments on any operator token (non-glob).
+  const segments: string[][] = [[]];
+  let hasOperator = false;
+  for (const token of parsed) {
+    if (typeof token === "string") {
+      segments[segments.length - 1].push(token);
+    } else if ("op" in token && token.op === "glob") {
+      segments[segments.length - 1].push(token.pattern);
+    } else {
+      hasOperator = true;
+      segments.push([]);
+    }
+  }
+
+  if (!hasOperator) return [];
+
+  const matches: { subcommand: string; pattern: string }[] = [];
+  for (const segment of segments) {
+    if (segment.length === 0) continue;
+    for (const pattern of unsandboxedCommands) {
+      const { tokens: patternTokens, isPrefixMatch } = parsePattern(pattern);
+      if (patternTokens.length === 0) continue;
+      if (isPrefixMatch) {
+        if (patternTokens.length > segment.length) continue;
+        const ok = patternTokens.every((t, i) => t === segment[i]);
+        if (ok) {
+          matches.push({ subcommand: segment.join(" "), pattern });
+          break;
+        }
+      } else {
+        if (patternTokens.length !== segment.length) continue;
+        const ok = patternTokens.every((t, i) => t === segment[i]);
+        if (ok) {
+          matches.push({ subcommand: segment.join(" "), pattern });
+          break;
+        }
+      }
+    }
+  }
+
+  return matches;
+}
+
+/**
  * Parses a command string into tokens. Globs are converted to their pattern strings.
  * Returns { isCompound: true } if the command contains shell operators (&&, ||, |, ;, redirects, etc.)
  * Safe trailing redirects (2>&1, 2>/dev/null, etc.) are stripped before parsing.

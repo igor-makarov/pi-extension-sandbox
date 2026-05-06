@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isUnsandboxedCommand } from "./sandbox-ops";
+import { findUnsandboxedCompoundMatches, isUnsandboxedCommand } from "./sandbox-ops";
 
 describe("isUnsandboxedCommand", () => {
   describe("exact match (no wildcard)", () => {
@@ -170,5 +170,76 @@ describe("isUnsandboxedCommand", () => {
       // But not compound commands
       expect(isUnsandboxedCommand("npm test && npm build", ["*"])).toBe(false);
     });
+  });
+});
+
+describe("findUnsandboxedCompoundMatches", () => {
+  it("returns [] for non-compound commands (even if they would match)", () => {
+    expect(findUnsandboxedCompoundMatches("npm test", ["npm test"])).toEqual([]);
+    expect(findUnsandboxedCompoundMatches("git status", ["git *"])).toEqual([]);
+  });
+
+  it("returns [] for non-compound commands that do not match", () => {
+    expect(findUnsandboxedCompoundMatches("npm build", ["npm test"])).toEqual([]);
+  });
+
+  it("returns [] for compound commands with no matching component", () => {
+    expect(findUnsandboxedCompoundMatches("ls && pwd", ["npm test"])).toEqual([]);
+  });
+
+  it("detects match on left side of &&", () => {
+    expect(findUnsandboxedCompoundMatches("npm test && npm build", ["npm test"])).toEqual([{ subcommand: "npm test", pattern: "npm test" }]);
+  });
+
+  it("detects match on right side of &&", () => {
+    expect(findUnsandboxedCompoundMatches("ls && git status", ["git *"])).toEqual([{ subcommand: "git status", pattern: "git *" }]);
+  });
+
+  it("detects matches across both sides of a pipe", () => {
+    expect(findUnsandboxedCompoundMatches("xcrun simctl list | head -10", ["xcrun simctl *"])).toEqual([
+      { subcommand: "xcrun simctl list", pattern: "xcrun simctl *" },
+    ]);
+  });
+
+  it("detects matches across ; separated commands", () => {
+    expect(findUnsandboxedCompoundMatches("echo hi; git status", ["git *"])).toEqual([{ subcommand: "git status", pattern: "git *" }]);
+  });
+
+  it("detects match when command has a write redirect", () => {
+    expect(findUnsandboxedCompoundMatches("mcporter foo > /tmp/out.txt", ["mcporter *"])).toEqual([
+      { subcommand: "mcporter foo", pattern: "mcporter *" },
+    ]);
+  });
+
+  it("detects match when command has a read redirect", () => {
+    expect(findUnsandboxedCompoundMatches("cat < input.txt", ["cat *"])).toEqual([{ subcommand: "cat", pattern: "cat *" }]);
+  });
+
+  it("returns all matching components", () => {
+    expect(findUnsandboxedCompoundMatches("npm test && npm build", ["npm *"])).toEqual([
+      { subcommand: "npm test", pattern: "npm *" },
+      { subcommand: "npm build", pattern: "npm *" },
+    ]);
+  });
+
+  it("ignores safe trailing redirects", () => {
+    // Safe trailing redirects do not count as compound for this check either.
+    expect(findUnsandboxedCompoundMatches("mcporter auth 2>&1", ["mcporter *"])).toEqual([]);
+    expect(findUnsandboxedCompoundMatches("mcporter auth 2>/dev/null", ["mcporter *"])).toEqual([]);
+    expect(findUnsandboxedCompoundMatches("mcporter auth >/dev/null 2>&1", ["mcporter *"])).toEqual([]);
+  });
+
+  it("only reports first matching pattern per component", () => {
+    expect(findUnsandboxedCompoundMatches("npm test | head", ["npm test", "npm *"])).toEqual([{ subcommand: "npm test", pattern: "npm test" }]);
+  });
+
+  it("ignores empty patterns", () => {
+    expect(findUnsandboxedCompoundMatches("npm test && ls", ["", "   "])).toEqual([]);
+  });
+
+  it("handles quoted arguments inside compound", () => {
+    expect(findUnsandboxedCompoundMatches("git commit -m 'hello world' && git push", ["git commit *"])).toEqual([
+      { subcommand: "git commit -m hello world", pattern: "git commit *" },
+    ]);
   });
 });
