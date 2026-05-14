@@ -42,6 +42,7 @@ export const DEFAULT_CONFIG: SandboxConfig = {
       "*.key",
       ".claude",
       ".pi",
+      "./.pi",
     ],
     allowGitConfig: false,
   },
